@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>.kk | Gamble</title>
+    <link rel="icon" href="assets/images/icon.png">
+    <link rel="stylesheet" href="styles/mainStyles.css">
+</head>
+<body>
+    <header>
+        <a href="index.html" class="logo">
+            <img src="assets/images/kk.jpg" alt=".kk logo" class="logo-mark">
+            <span>kaka's website kub</span>
+        </a>
+        <nav class="nav">
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="gamble.html" class="nav-link active">Gamble</a>
+            <a href="games.html" class="nav-link">Games</a>
+            <a href="others.html" class="nav-link">Others</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="name-input-section">
+            <span class="welcome-text">Search</span>
+            <input 
+                type="search" 
+                id="searchInput" 
+                class="name-input" 
+                placeholder="Enter keywords"
+                maxlength="50"
+            />
+        </div>
+
+        <div class="cards">
+            <a href="gamble/coinFlip.html" class="card">
+                <img src="assets/images/thumbnail/gamble/coinFlip.png" alt="Coin Flip game" />
+                <h2>Coin Flip</h2>
+                <p>Tap to flip the coin and let fate decide, let the coin make the call. Toss it and trust your luck!
+                </p>
+            </a>
+
+            <a href="gamble/dice.html" class="card">
+                <img src="assets/images/thumbnail/gamble/rollTheDice.png" alt="Placeholder image 2" />
+                <h2>Roll The Dice</h2>
+                <p>Give it a roll and see where it lands, let destiny pick your number. Click to take your chance.</p>
+            </a>
+
+            <a href="gamble/spinWheel.html" class="card">
+                <img src="assets/images/thumbnail/gamble/wheelOfFortune.png" alt="Placeholder image 3" />
+                <h2>Wheel of Fortune</h2>
+                <p>Crank for a spin and test your luck, let the fate guide your chance. See what fortune it brings.</p>
+            </a>
+        </div>
+    </main>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const cards = Array.from(document.querySelectorAll('.cards .card'));
+
+        const filterCards = () => {
+            const query = searchInput.value.trim().toLowerCase();
+            cards.forEach(card => {
+                const title = card.querySelector('h2')?.textContent.trim().toLowerCase() || '';
+                card.style.display = title.includes(query) ? '' : 'none';
+            });
+        };
+
+        searchInput.addEventListener('input', filterCards);
+    </script>
+</body>
+</html>

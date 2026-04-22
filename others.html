@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>.kk | Others</title>
+    <link rel="icon" href="assets/images/icon.png">
+    <link rel="stylesheet" href="styles/mainStyles.css">
+</head>
+<body>
+    <header>
+        <a href="index.html" class="logo">
+            <img src="assets/images/kk.jpg" alt=".kk logo" class="logo-mark">
+            <span>kaka's website kub</span>
+        </a>
+        <nav class="nav">
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="gamble.html" class="nav-link">Gamble</a>
+            <a href="games.html" class="nav-link">Games</a>
+            <a href="others.html" class="nav-link active">Others</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="name-input-section">
+            <span class="welcome-text">Search</span>
+            <input 
+                type="search" 
+                id="searchInput" 
+                class="name-input" 
+                placeholder="Enter keywords"
+                maxlength="50"
+            />
+        </div>
+
+        <div class="cards">
+            <div class="card">
+                <img src="assets/images/placeholder.png" alt="Placeholder image 1" />
+                <h2>Feature One</h2>
+                <p>Short description for the first item. This is a clean placeholder area for your main message.</p>
+            </div>
+
+            <div class="card">
+                <img src="assets/images/placeholder.png" alt="Placeholder image 2" />
+                <h2>Feature Two</h2>
+                <p>Short description for the second item. Keep the text concise and easy to read.</p>
+            </div>
+
+            <div class="card">
+                <img src="assets/images/placeholder.png" alt="Placeholder image 3" />
+                <h2>Feature Three</h2>
+                <p>Short description for the third item. This is the final item in the horizontal group.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const cards = Array.from(document.querySelectorAll('.cards .card'));
+
+        const filterCards = () => {
+            const query = searchInput.value.trim().toLowerCase();
+            cards.forEach(card => {
+                const title = card.querySelector('h2')?.textContent.trim().toLowerCase() || '';
+                card.style.display = title.includes(query) ? '' : 'none';
+            });
+        };
+
+        searchInput.addEventListener('input', filterCards);
+    </script>
+</body>
+</html>

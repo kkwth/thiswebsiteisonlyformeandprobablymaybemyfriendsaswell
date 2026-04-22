@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>.kk | Wheel of Fortune</title>
+    <link rel="icon" href="../assets/images/icon.png">
+    <link rel="stylesheet" href="../styles/mainStyles.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg, #f4f1eb);
+            font-family: 'Iannnnn-COW-Black', system-ui, sans-serif;
+            margin: 0;
+        }
+        header.page-header {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            padding: 20px 32px;
+            background: rgba(255,255,255,0.9);
+            border-bottom: 1px solid var(--border, #e0d6c8);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .back-button {
+            padding: 10px 16px;
+            background: #ffffff;
+            border: 1px solid #e0d6c8;
+            border-radius: 12px;
+            color: #3a3a3a;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: background 0.2s ease;
+        }
+        .back-button:hover { background: #f0f0f0; }
+        .page-title {
+            font-size: 1.55rem;
+            font-weight: bold;
+            color: #3a3a3a;
+            justify-self: center;
+        }
+        .header-spacer { width: 100px; }
+        main { flex: 1; padding: 40px 32px; display: flex; }
+        
+        .game-shell { max-width: 900px; margin: 0 auto; flex: 1; display: flex; }
+        
+        /* Layout for the specific Wheel Card */
+        .game-card.wheel-card {
+            background: var(--card, #ffffff);
+            border: 1px solid var(--border, #e0d6c8);
+            border-radius: 28px;
+            padding: 32px;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.08);
+            display: grid;
+            /* minmax(0, 1fr) is the critical CSS Grid fix to prevent infinite stretching */
+            grid-template-columns: minmax(0, 1fr) 320px;
+            gap: 32px;
+            align-items: stretch;
+            height: 100%;
+            width: 100%;
+        }
+
+        .wheel-container {
+            background: #f7f5f1;
+            border-radius: 20px;
+            position: relative;
+            min-height: 350px;
+            height: 100%;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            outline: none;
+            cursor: pointer;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .wheel-pointer {
+            position: absolute;
+            right: 20px; /* <--- Moved inward to reach the smaller wheel */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-top: 18px solid transparent;
+            border-bottom: 18px solid transparent;
+            border-right: 32px solid #3a3a3a;
+            filter: drop-shadow(-3px 0px 4px rgba(0,0,0,0.15));
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .controls-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+        .input-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #3a3a3a;
+        }
+        textarea {
+            flex: 1;
+            min-height: 150px;
+            resize: none;
+            padding: 14px;
+            border: 1px solid #e0d6c8;
+            border-radius: 14px;
+            background: #ffffff;
+            font-family: inherit;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #3a3a3a;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        textarea:focus { border-color: #3a3a3a; }
+
+        .list-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .action-btn {
+            padding: 10px;
+            background: #f4f1eb;
+            border: 1px solid #e0d6c8;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #3a3a3a;
+            font-size: 0.9rem;
+            transition: all 0.15s;
+        }
+        .action-btn:hover { background: #e8e3d9; }
+
+        .result-panel {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 22px;
+            border: 1px solid var(--border, #e0d6c8);
+            border-radius: 18px;
+            background: rgba(255,255,255,0.9);
+            margin-top: 10px;
+        }
+        .result-panel > div {
+            overflow: hidden;
+            flex: 1;
+        }
+        .result-label { font-size: 0.95rem; color: #888; margin-bottom: 4px; }
+        .result-text  { 
+            font-size: 1.35rem; 
+            font-weight: bold; 
+            color: #3a3a3a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .roll-button {
+            padding: 14px 28px;
+            font-size: 1rem;
+            border-radius: 14px;
+            border: 1px solid #3a3a3a;
+            background: #3a3a3a;
+            color: #ffffff;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        .roll-button:hover { transform: translateY(-1px); opacity: 0.9; }
+        .roll-button:active { transform: translateY(1px); }
+        .roll-button:disabled { opacity: 0.45; cursor: default; transform: none; background:#999; border-color:#999;}
+
+        @media (max-width: 768px) {
+            .game-card.wheel-card { grid-template-columns: 1fr; height: auto; }
+            .wheel-container { height: 300px; min-height: auto; }
+            .result-panel { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <header class="page-header">
+        <a href="../gamble.html" class="back-button">&lt; Back</a>
+        <span class="page-title">Wheel of Fortune</span>
+        <span class="header-spacer"></span>
+    </header>
+
+    <main>
+        <section class="game-shell">
+            <div class="game-card wheel-card">
+                <div class="wheel-container" id="wheelScene">
+                    <canvas id="wheelCanvas"></canvas>
+                    <div class="wheel-pointer"></div>
+                </div>
+
+                <div class="controls-sidebar">
+                    <div class="input-group">
+                        <span class="input-label">Wheel Entries</span>
+                        <textarea id="entriesInput" spellcheck="false">1
+2
+3
+4
+5
+6</textarea>
+                    </div>
+
+                    <div class="list-buttons">
+                        <button id="shuffleBtn" class="action-btn">Shuffle</button>
+                        <button id="sortBtn" class="action-btn">Sort</button>
+                    </div>
+
+                    <div class="result-panel">
+                        <div>
+                            <div class="result-label">Result</div>
+                            <div id="resultText" class="result-text">Ready</div>
+                        </div>
+                        <button id="spinButton" class="roll-button">Spin</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+    (function () {
+        const container = document.getElementById('wheelScene');
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const textarea = document.getElementById('entriesInput');
+        const spinBtn = document.getElementById('spinButton');
+        const resultEl = document.getElementById('resultText');
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        const sortBtn = document.getElementById('sortBtn');
+
+        const COLORS = ['#E05533', '#3A7FDD', '#2DA87A', '#8B5CF6', '#D97706', '#E8415A', '#0EA5E9', '#10B981', '#F59E0B', '#6366F1'];
+
+        let items = [];
+        let currentAngle = 0;
+        let isSpinning = false;
+        let cw, ch;
+
+        function updateList() {
+            items = textarea.value.split('\n').map(s => s.trim()).filter(s => s !== '');
+            if(items.length === 0) items = ['Empty']; 
+            drawWheel(currentAngle);
+        }
+
+        function drawWheel(angleOffset) {
+            ctx.clearRect(0, 0, cw, ch);
+            
+            const cx = cw / 2;
+            const cy = ch / 2;
+            // Changed from - 15 to - 40 to give the wheel more border clearance
+            const radius = Math.min(cx, cy) - 40; 
+            
+            if (radius <= 0) return;
+
+            const sliceAngle = (Math.PI * 2) / items.length;
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = 'rgba(0,0,0,0.1)';
+            ctx.shadowBlur = 15;
+            ctx.fill();
+            ctx.shadowColor = 'transparent';
+
+            for (let i = 0; i < items.length; i++) {
+                const angle = angleOffset + i * sliceAngle;
+                
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.arc(cx, cy, radius, angle, angle + sliceAngle);
+                ctx.lineTo(cx, cy);
+                ctx.fillStyle = COLORS[i % COLORS.length];
+                ctx.fill();
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(angle + sliceAngle / 2);
+                
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#ffffff';
+                
+                const maxFontSize = 24;
+                const minFontSize = 12;
+                const dynamicSize = Math.max(minFontSize, Math.min(maxFontSize, (sliceAngle * radius) / 1.5));
+                ctx.font = `bold ${dynamicSize}px system-ui, sans-serif`;
+                
+                ctx.fillText(items[i], radius - 20, 0, radius - 60);
+                ctx.restore();
+            }
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#3a3a3a';
+            ctx.stroke();
+        }
+
+        function spin() {
+            if (isSpinning || items.length === 0 || items[0] === 'Empty') return;
+            isSpinning = true;
+            spinBtn.disabled = true;
+            resultEl.textContent = 'Spinning...';
+
+            // 1. Increased to 8 seconds for smoother, longer spin
+            const duration = 7000; 
+            const startAngle = currentAngle;
+            
+            // 2. Base of 8 to 12 full rotations, plus a random final offset
+            const spinAmount = (Math.random() * Math.PI * 2) + (Math.PI * 2 * (8 + Math.floor(Math.random() * 4))); 
+            const startTime = performance.now();
+
+            // 3. Cubic ease-out for smoother deceleration: less aggressive than power of 5
+            const easeOut = t => 1 - Math.pow(1 - t, 4);
+
+            function animate(time) {
+                let elapsed = time - startTime;
+                if (elapsed > duration) elapsed = duration;
+                
+                const progress = elapsed / duration;
+                currentAngle = startAngle + spinAmount * easeOut(progress);
+                
+                drawWheel(currentAngle);
+
+                if (elapsed < duration) {
+                    requestAnimationFrame(animate);
+                } else {
+                    isSpinning = false;
+                    spinBtn.disabled = false;
+                    
+                    const sliceAngle = (Math.PI * 2) / items.length;
+                    const normalizedAngle = currentAngle % (Math.PI * 2);
+                    const winnerIndex = Math.floor(((Math.PI * 2 - normalizedAngle) % (Math.PI * 2)) / sliceAngle);
+                    
+                    resultEl.textContent = items[winnerIndex];
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        textarea.addEventListener('input', () => { if(!isSpinning) updateList(); });
+        
+        shuffleBtn.addEventListener('click', () => {
+            if (isSpinning) return;
+            items.sort(() => Math.random() - 0.5);
+            textarea.value = items.join('\n');
+            updateList();
+        });
+
+        sortBtn.addEventListener('click', () => {
+            if (isSpinning) return;
+            items.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+            textarea.value = items.join('\n');
+            updateList();
+        });
+
+        spinBtn.addEventListener('click', spin);
+        canvas.addEventListener('click', spin);
+
+        /* ── Safely decoupled Resize Observer ── */
+        const resizeObserver = new ResizeObserver((entries) => {
+            const entry = entries[0];
+            
+            cw = entry.contentRect.width;
+            ch = entry.contentRect.height;
+            
+            if (cw === 0 || ch === 0) return;
+            
+            canvas.width = cw * window.devicePixelRatio;
+            canvas.height = ch * window.devicePixelRatio;
+            
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            
+            if (!isSpinning) drawWheel(currentAngle);
+        });
+        
+        resizeObserver.observe(container);
+        updateList();
+    })();
+    </script>
+</body>
+</html>

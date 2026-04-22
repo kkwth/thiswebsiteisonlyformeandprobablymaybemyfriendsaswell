@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>.kk | Roll The Dice</title>
+    <link rel="icon" href="../assets/images/icon.png">
+    <link rel="stylesheet" href="../styles/mainStyles.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg, #f4f1eb);
+            font-family: 'Iannnnn-COW-Black', system-ui, sans-serif;
+            margin: 0;
+        }
+        header.page-header {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            padding: 20px 32px;
+            background: rgba(255,255,255,0.9);
+            border-bottom: 1px solid var(--border, #e0d6c8);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .back-button {
+            padding: 10px 16px;
+            background: #ffffff;
+            border: 1px solid #e0d6c8;
+            border-radius: 12px;
+            color: #3a3a3a;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: background 0.2s ease;
+        }
+        .back-button:hover { background: #f0f0f0; }
+        .page-title {
+            font-size: 1.55rem;
+            font-weight: bold;
+            color: #3a3a3a;
+            justify-self: center;
+        }
+        .header-spacer { width: 100px; }
+        main { flex: 1; padding: 40px 32px; }
+        .game-shell { max-width: 760px; margin: 0 auto; }
+        .game-card {
+            background: var(--card, #ffffff);
+            border: 1px solid var(--border, #e0d6c8);
+            border-radius: 28px;
+            padding: 32px;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.08);
+            display: grid;
+            gap: 28px;
+        }
+        .dice-scene {
+            background: #f7f5f1;
+            border-radius: 20px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+        }
+        .dice-scene canvas { display: block; outline: none; }
+        .tap-hint {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            color: #999;
+            pointer-events: none;
+            transition: opacity 0.4s;
+        }
+        .controls { display: grid; gap: 18px; }
+        .die-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .die-btn {
+            padding: 9px 16px;
+            border: 1px solid #e0d6c8;
+            border-radius: 12px;
+            background: #ffffff;
+            color: #3a3a3a;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .die-btn:hover { background: #f5f0e8; }
+        .die-btn.active {
+            background: #3a3a3a;
+            color: #ffffff;
+            border-color: #3a3a3a;
+        }
+        .result-panel {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 22px;
+            border: 1px solid var(--border, #e0d6c8);
+            border-radius: 18px;
+            background: rgba(255,255,255,0.9);
+        }
+        .result-label { font-size: 0.95rem; color: #888; }
+        .result-text  { font-size: 1.35rem; font-weight: bold; color: #3a3a3a; }
+        .roll-button {
+            padding: 14px 28px;
+            font-size: 1rem;
+            border-radius: 14px;
+            border: 1px solid #e0d6c8;
+            background: #ffffff;
+            color: #3a3a3a;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .roll-button:hover { background: #f5f0e8; transform: translateY(-1px); }
+        .roll-button:active { transform: translateY(1px); }
+        .roll-button:disabled { opacity: 0.45; cursor: default; transform: none; }
+        .hint { color: #888; line-height: 1.7; font-size: 0.9rem; margin: 0; }
+        @media (max-width: 700px) {
+            .game-card { padding: 20px; }
+            .page-title { font-size: 1.35rem; }
+            .dice-scene { height: 240px; }
+            .result-panel { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <header class="page-header">
+        <a href="../gamble.html" class="back-button">< Back</a>
+        <span class="page-title">Roll The Dice</span>
+        <span class="header-spacer"></span>
+    </header>
+
+    <main>
+        <section class="game-shell">
+            <div class="game-card">
+                <div class="dice-scene" id="diceScene">
+                    <canvas id="diceCanvas"></canvas>
+                    <span class="tap-hint" id="tapHint">tap to roll</span>
+                </div>
+
+                <div class="controls">
+                    <div class="die-selector" id="dieSelector"></div>
+
+                    <div class="result-panel">
+                        <div>
+                            <div class="result-label">Last result</div>
+                            <div id="resultText" class="result-text">Ready to roll</div>
+                        </div>
+                        <button id="rollButton" class="roll-button">Roll Dice</button>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+    (function () {
+        const DICE_TYPES = {
+            d4:  { sides: 4,  color: 0xE05533, label: 'd4',  fontScale: 0.35 },
+            d6:  { sides: 6,  color: 0x3A7FDD, label: 'd6',  fontScale: 0.45 },
+            d8:  { sides: 8,  color: 0x2DA87A, label: 'd8',  fontScale: 0.35 },
+            d10: { sides: 10, color: 0x8B5CF6, label: 'd10', fontScale: 0.30 },
+            d12: { sides: 12, color: 0xD97706, label: 'd12', fontScale: 0.40 },
+            d20: { sides: 20, color: 0xE8415A, label: 'd20', fontScale: 0.30 },
+        };
+
+        const scene    = document.getElementById('diceScene');
+        const canvas   = document.getElementById('diceCanvas');
+        const resultEl = document.getElementById('resultText');
+        const rollBtn  = document.getElementById('rollButton');
+        const tapHint  = document.getElementById('tapHint');
+        const selectorEl = document.getElementById('dieSelector');
+
+        const W = () => scene.clientWidth;
+        const H = () => scene.clientHeight;
+
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        renderer.setClearColor(0x000000, 0);
+        renderer.setSize(W(), H());
+
+        const threeScene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, W() / H(), 0.1, 100);
+        camera.position.set(0, 0, 5.5);
+
+        threeScene.add(new THREE.AmbientLight(0xffffff, 0.65));
+        const dl1 = new THREE.DirectionalLight(0xffffff, 0.9);
+        dl1.position.set(5, 8, 6);
+        threeScene.add(dl1);
+        const dl2 = new THREE.DirectionalLight(0xffffff, 0.3);
+        dl2.position.set(-4, -4, 2);
+        threeScene.add(dl2);
+
+        let mesh = null;
+        let faceData = []; 
+        let rolling = false;
+        let hasRolled = false;
+        let animPhase = 'idle';
+        let animT = 0;
+        let startQuat = new THREE.Quaternion();
+        let targetQuat = new THREE.Quaternion();
+        let rollAxis = new THREE.Vector3();
+        let totalSpin = 0;
+        let currentKey = 'd6';
+
+        /* ── Canvas label texture ── */
+        function makeLabelCanvas(text, bgColor, fontScale = 0.38) {
+            const sz = 256;
+            const c = document.createElement('canvas');
+            c.width = c.height = sz;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, sz, sz);
+            
+            // Use the fontScale here instead of the hardcoded 0.38
+            ctx.font = `bold ${Math.floor(sz * fontScale)}px system-ui, sans-serif`;
+            
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(text, sz / 2, sz / 2);
+            return c;
+        }
+
+        function buildD10Geometry() {
+            const verts = [];
+            // Increased R (radius) and decreased H_pole (height) to make it wider
+            const R = 1.5; 
+            const H_pole = 1.5; 
+            
+            // This math guarantees the faces stay perfectly flat regardless of width/height
+            const h_ring = H_pole / (5 + 2 * Math.sqrt(5));
+
+            for (let i = 0; i < 5; i++) {
+                verts.push([Math.cos((i / 5) * Math.PI * 2) * R, h_ring, Math.sin((i / 5) * Math.PI * 2) * R]);
+            }
+            for (let i = 0; i < 5; i++) {
+                verts.push([Math.cos((i / 5) * Math.PI * 2 + Math.PI / 5) * R, -h_ring, Math.sin((i / 5) * Math.PI * 2 + Math.PI / 5) * R]);
+            }
+            verts.push([0, H_pole, 0]);   // 10 = top
+            verts.push([0, -H_pole, 0]);  // 11 = bottom
+            const top = 10, bot = 11;
+            const faces = [];
+            
+            // Top Kites
+            for (let i = 0; i < 5; i++) {
+                faces.push([top, (i + 1) % 5, i]);
+                faces.push([(i + 1) % 5, 5 + i, i]);
+            }
+            
+            // Bottom Kites
+            for (let i = 0; i < 5; i++) {
+                faces.push([bot, 5 + (i + 4) % 5, 5 + i]);
+                faces.push([5 + (i + 4) % 5, i, 5 + i]);
+            }
+            
+            const positions = [];
+            faces.forEach(([a, b, c]) => {
+                [a, b, c].forEach(vi => positions.push(...verts[vi]));
+            });
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            return geo;
+        }
+
+        /* ── Build mesh & resolve UV Stretching & Centering ── */
+        function buildMesh(key) {
+            if (mesh) {
+                threeScene.remove(mesh);
+                mesh.traverse(o => {
+                    if (o.geometry) o.geometry.dispose();
+                    if (o.material) {
+                        (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose());
+                    }
+                });
+                mesh = null;
+            }
+
+            const { sides, color, fontScale } = DICE_TYPES[key];
+            let geo;
+            if (sides === 4)       geo = new THREE.TetrahedronGeometry(1.5);
+            else if (sides === 6)  geo = new THREE.BoxGeometry(1.8, 1.8, 1.8);
+            else if (sides === 8)  geo = new THREE.OctahedronGeometry(1.6);
+            else if (sides === 10) geo = buildD10Geometry();
+            else if (sides === 12) geo = new THREE.DodecahedronGeometry(1.6);
+            else if (sides === 20) geo = new THREE.IcosahedronGeometry(1.6);
+
+            geo = geo.toNonIndexed();
+            geo.computeVertexNormals();
+
+            const posAttr    = geo.attributes.position;
+            const normalAttr = geo.attributes.normal;
+            const triCount   = posAttr.count / 3;
+            const facesPerSide = triCount / sides;
+
+            // Generate explicit UV Maps per face
+            const uvAttr = new THREE.BufferAttribute(new Float32Array(posAttr.count * 2), 2);
+            geo.setAttribute('uv', uvAttr);
+
+            faceData = [];
+            const materials = [];
+
+            for (let face = 0; face < sides; face++) {
+                const tex = new THREE.CanvasTexture(makeLabelCanvas(String(face + 1), '#' + color.toString(16).padStart(6, '0'), fontScale));
+                materials.push(new THREE.MeshPhongMaterial({ color: 0xffffff, map: tex, shininess: 60, specular: 0x444444 }));
+
+                let nx = 0, ny = 0, nz = 0;
+                const triStart = Math.round(face * facesPerSide);
+                const triEnd   = Math.round((face + 1) * facesPerSide);
+
+                for (let t = triStart; t < triEnd; t++) {
+                    const i = t * 3;
+                    const va = new THREE.Vector3().fromBufferAttribute(posAttr, i);
+                    const vb = new THREE.Vector3().fromBufferAttribute(posAttr, i + 1);
+                    const vc = new THREE.Vector3().fromBufferAttribute(posAttr, i + 2);
+                    const fnVec = new THREE.Vector3().crossVectors(vb.clone().sub(va), vc.clone().sub(va)).normalize();
+                    nx += fnVec.x; ny += fnVec.y; nz += fnVec.z;
+                    geo.addGroup(i, 3, face);
+                }
+                const fn = new THREE.Vector3(nx, ny, nz).normalize();
+
+                // FORCE IDENTICAL NORMALS across the entire face so lighting renders it perfectly flat (removes the "crease")
+                for (let t = triStart; t < triEnd; t++) {
+                    for (let v = 0; v < 3; v++) {
+                        normalAttr.setXYZ(t * 3 + v, fn.x, fn.y, fn.z);
+                    }
+                }
+
+                // Build a 2D local coordinate system for the face to project UVs onto
+                let up = new THREE.Vector3(0, 1, 0);
+                if (Math.abs(fn.y) > 0.95) up = new THREE.Vector3(1, 0, 0);
+                const right = new THREE.Vector3().crossVectors(up, fn).normalize();
+                const planeUp = new THREE.Vector3().crossVectors(fn, right).normalize();
+                
+                faceData.push({ fn, right, planeUp });
+
+                const faceVerts = [];
+                const unique3DVerts = [];
+
+                for (let t = triStart; t < triEnd; t++) {
+                    for (let v = 0; v < 3; v++) {
+                        const vec = new THREE.Vector3().fromBufferAttribute(posAttr, t * 3 + v);
+                        const u = vec.dot(right);
+                        const vCoord = vec.dot(planeUp);
+                        faceVerts.push({ u, v: vCoord });
+
+                        // Collect unique 3D vertices to find the true centroid
+                        if (!unique3DVerts.some(p => p.distanceTo(vec) < 0.001)) {
+                            unique3DVerts.push(vec);
+                        }
+                    }
+                }
+
+                // Calculate the true geometric centroid of the face
+                const centroid = new THREE.Vector3();
+                unique3DVerts.forEach(p => centroid.add(p));
+                centroid.divideScalar(unique3DVerts.length);
+
+                const centerU = centroid.dot(right);
+                const centerV = centroid.dot(planeUp);
+
+                // Find the proper scale range based on distance from the centroid
+                let maxDist = 0;
+                unique3DVerts.forEach(p => {
+                    const u = p.dot(right);
+                    const v = p.dot(planeUp);
+                    maxDist = Math.max(maxDist, Math.abs(u - centerU), Math.abs(v - centerV));
+                });
+                const range = maxDist * 2;
+
+                // Map coordinates cleanly onto the [0, 1] texture space
+                let vIdx = 0;
+                for (let t = triStart; t < triEnd; t++) {
+                    for (let v = 0; v < 3; v++) {
+                        const finalU = ((faceVerts[vIdx].u - centerU) / range) * 1.35 + 0.5;
+                        const finalV = ((faceVerts[vIdx].v - centerV) / range) * 1.35 + 0.5;
+                        uvAttr.setXY(t * 3 + v, finalU, finalV);
+                        vIdx++;
+                    }
+                }
+            }
+
+            mesh = new THREE.Mesh(geo, materials);
+            
+            // Give the die a completely random 3D rotation on spawn
+            mesh.rotation.set(
+                Math.random() * Math.PI * 2, 
+                Math.random() * Math.PI * 2, 
+                Math.random() * Math.PI * 2
+            );
+
+            threeScene.add(mesh);
+        }
+
+        /* ── Quaternion that brings face directly to camera perfectly upright ── */
+        function quatForFace(faceIdx) {
+            const { fn, right, planeUp } = faceData[faceIdx];
+            const m = new THREE.Matrix4().makeBasis(right, planeUp, fn);
+            return new THREE.Quaternion().setFromRotationMatrix(m).invert();
+        }
+
+        /* ── Trigger roll animation ── */
+        function rollTo(faceIdx) {
+            startQuat = mesh.quaternion.clone();
+            targetQuat = quatForFace(faceIdx);
+            
+            rollAxis = new THREE.Vector3(
+                Math.random() - 0.5, 
+                Math.random() - 0.5, 
+                Math.random() - 0.5
+            ).normalize();
+
+            // Increase rotations to 10-15 full spins for a high-energy start
+            totalSpin = Math.PI * 2 * (10 + Math.floor(Math.random() * 5)); 
+            
+            animPhase = 'rolling';
+            animT = 0;
+        }
+
+        // A much more dramatic "Power of 5" easing
+        function easeOutQuint(t) { return 1 - Math.pow(1 - t, 5); }
+
+        /* ── Main render loop ── */
+        const clock = new THREE.Clock();
+        (function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+
+            if (animPhase === 'rolling') {
+                // Increased duration to 3 seconds for suspense
+                animT += dt / 3.0; 
+                if (animT >= 1) {
+                    animT = 1;
+                    animPhase = 'settle';
+                }
+                
+                const t = easeOutQuint(animT);
+                
+                // 1. Handle the core orientation
+                mesh.quaternion.slerpQuaternions(startQuat, targetQuat, t);
+                
+                // 2. Handle the extra "tumbling" spins
+                // We multiply the totalSpin by (1 - t) so the tumbling 
+                // stops exactly as the face alignment finishes.
+                const spin = new THREE.Quaternion().setFromAxisAngle(rollAxis, totalSpin * (1 - t));
+                mesh.quaternion.multiply(spin);
+
+            } else if (animPhase === 'settle') {
+                animPhase = 'idle';
+                rolling = false;
+                rollBtn.disabled = false;
+                tapHint.style.opacity = '1';
+                // Reveal the result ONLY when the animation is done
+                resultEl.textContent = `${window.pendingResult}`;
+            } else if (animPhase === 'idle' && mesh && !hasRolled) {
+                // Only gently rotate if it hasn't landed on a final result yet
+                mesh.rotation.y += dt * 0.22;
+            }
+
+            renderer.render(threeScene, camera);
+        })();
+
+        /* ── Roll action ── */
+        function doRoll() {
+            if (rolling) return;
+            rolling = true;
+            hasRolled = true;
+            rollBtn.disabled = true;
+            tapHint.style.opacity = '0';
+            
+            // Set text to "Rolling..." immediately
+            resultEl.textContent = "Rolling...";
+
+            const sides = DICE_TYPES[currentKey].sides;
+            const result = Math.floor(Math.random() * sides) + 1;
+            
+            // Move the "Rolled X" text update into the 'settle' phase logic
+            // To do this, we'll store the result in a temporary variable
+            window.pendingResult = result; 
+            
+            rollTo(result - 1);
+        }
+
+        /* ── Build selector buttons ── */
+        Object.keys(DICE_TYPES).forEach(key => {
+            const btn = document.createElement('button');
+            btn.className = 'die-btn' + (key === 'd6' ? ' active' : '');
+            btn.textContent = DICE_TYPES[key].label;
+            btn.onclick = () => {
+                if (rolling) return;
+                document.querySelectorAll('.die-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentKey = key;
+                hasRolled = false;
+                buildMesh(key);
+                resultEl.textContent = `Ready to roll`;
+                tapHint.style.opacity = '1';
+            };
+            selectorEl.appendChild(btn);
+        });
+
+        rollBtn.onclick = doRoll;
+        scene.onclick = doRoll;
+
+        /* ── Resize handler ── */
+        new ResizeObserver(() => {
+            renderer.setSize(W(), H());
+            camera.aspect = W() / H();
+            camera.updateProjectionMatrix();
+        }).observe(scene);
+
+        /* ── Init ── */
+        buildMesh('d6');
+    })();
+    </script>
+</body>
+</html>

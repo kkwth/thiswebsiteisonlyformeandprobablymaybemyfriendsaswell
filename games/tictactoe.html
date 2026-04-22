@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>.kk | Tic Tac Toe</title>
+    <link rel="icon" href="../assets/images/icon.png">
+    <link rel="stylesheet" href="../styles/mainStyles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg, #f4f1eb);
+            font-family: 'Iannnnn-COW-Black', system-ui, sans-serif;
+            margin: 0;
+        }
+        header.page-header {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            padding: 20px 32px;
+            background: rgba(255,255,255,0.9);
+            border-bottom: 1px solid var(--border, #e0d6c8);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .back-button {
+            padding: 10px 16px;
+            background: #ffffff;
+            border: 1px solid #e0d6c8;
+            border-radius: 12px;
+            color: #3a3a3a;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: background 0.2s ease;
+        }
+        .back-button:hover { background: #f0f0f0; }
+        .page-title {
+            font-size: 1.55rem;
+            font-weight: bold;
+            color: #3a3a3a;
+            justify-self: center;
+        }
+        .header-spacer { width: 100px; }
+        main { flex: 1; padding: 40px 32px; display: flex; }
+        
+        .game-shell { max-width: 850px; margin: 0 auto; flex: 1; display: flex; }
+        
+        .game-card {
+            background: var(--card, #ffffff);
+            border: 1px solid var(--border, #e0d6c8);
+            border-radius: 28px;
+            padding: 32px;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.08);
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 320px;
+            gap: 32px;
+            align-items: stretch;
+            width: 100%;
+        }
+
+        .board-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f7f5f1;
+            border-radius: 20px;
+            padding: 20px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr); 
+            gap: 12px;
+            width: 100%;
+            max-width: 350px;
+            aspect-ratio: 1;
+        }
+
+        .cell {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4.5rem;
+            line-height: 1; 
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s, box-shadow 0.2s;
+            user-select: none;
+            aspect-ratio: 1; 
+        }
+
+        .cell:hover {
+            background: #faf9f7;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+        }
+
+        .cell.taken { cursor: default; transform: none; }
+        .cell.x { color: #3a3a3a; }
+        .cell.o { color: #E05533; } 
+        .cell.win-highlight { background: #e8f5e9; }
+
+        .controls-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .mode-tabs {
+            display: flex;
+            gap: 8px;
+            background: #f7f5f1;
+            padding: 6px;
+            border-radius: 16px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 12px;
+            background: transparent;
+            color: #888;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .tab-btn.active {
+            background: #ffffff;
+            color: #3a3a3a;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .panel { display: none; }
+        .panel.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .input-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #3a3a3a;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .difficulty-selector, .online-controls {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .diff-btn {
+            padding: 12px 16px;
+            border: 1px solid #e0d6c8;
+            border-radius: 14px;
+            background: #ffffff;
+            color: #3a3a3a;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+
+        .diff-btn:hover { background: #f5f0e8; }
+        .diff-btn.active {
+            background: #3a3a3a;
+            color: #ffffff;
+            border-color: #3a3a3a;
+        }
+
+        .room-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #e0d6c8;
+            font-family: inherit;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .status-box {
+            font-size: 0.85rem;
+            color: #E05533;
+            text-align: center;
+            word-break: break-all;
+        }
+        
+        #opponentNameDisplay {
+            color: #3a3a3a;
+            font-weight: bold;
+            margin-top: -5px; 
+        }
+
+        .result-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px;
+            padding: 22px;
+            border: 1px solid var(--border, #e0d6c8);
+            border-radius: 18px;
+            background: rgba(255,255,255,0.9);
+            margin-top: auto;
+            text-align: center;
+        }
+
+        .result-label { font-size: 0.95rem; color: #888; }
+        .result-text  { font-size: 1.5rem; font-weight: bold; color: #3a3a3a; }
+
+        .roll-button {
+            padding: 14px 28px;
+            margin-top: 10px;
+            font-size: 1rem;
+            border-radius: 14px;
+            border: 1px solid #3a3a3a;
+            background: #3a3a3a;
+            color: #ffffff;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            font-family: inherit;
+        }
+        .roll-button:hover { transform: translateY(-1px); opacity: 0.9; }
+        .roll-button:active { transform: translateY(1px); }
+
+        /* Settings Icon & Modal Styles */
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .icon-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.4rem;
+            font-weight: bold;
+            cursor: pointer;
+            color: #888;
+            padding: 0 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            line-height: 1;
+        }
+        .icon-btn:hover { background: #e0d6c8; color: #3a3a3a; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            display: none; align-items: center; justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
+        .modal-card {
+            background: #ffffff; padding: 24px; border-radius: 24px;
+            width: 90%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            font-family: inherit;
+        }
+        .setting-group { margin-bottom: 16px; text-align: left; }
+        .setting-group select { width: 100%; margin-top: 6px; }
+        
+        .section-divider {
+            width: 100%;
+            height: 1px;
+            background: #e0d6c8;
+            margin: 4px 0;
+        }
+
+        @media (max-width: 768px) {
+            .game-card { grid-template-columns: 1fr; }
+            .board-container { padding: 30px; }
+            .result-panel { margin-top: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="page-header">
+        <a href="../games.html" class="back-button">&lt; Back</a>
+        <span class="page-title">Tic Tac Toe</span>
+        <span class="header-spacer"></span>
+    </header>
+
+    <main>
+        <section class="game-shell">
+            <div class="game-card">
+                <div class="board-container">
+                    <div class="board" id="board">
+                        </div>
+                </div>
+
+                <div class="controls-sidebar">
+                    
+                    <div class="mode-tabs">
+                        <button class="tab-btn active" data-mode="bot">Play Bot</button>
+                        <button class="tab-btn" data-mode="online">Play Online</button>
+                    </div>
+
+                    <div id="botPanel" class="panel active">
+                        <span class="input-label">Bot Difficulty</span>
+                        <div class="difficulty-selector" id="difficultySelector">
+                            <button class="diff-btn" data-level="easy">Easy (Random)</button>
+                            <button class="diff-btn active" data-level="normal">Normal (Smart)</button>
+                            <button class="diff-btn" data-level="hard">Hard (Unbeatable)</button>
+                        </div>
+                    </div>
+
+                    <div id="onlinePanel" class="panel">
+                        <div class="header-row">
+                            <span class="input-label" style="margin:0;">Playing as: <span id="playerNameDisplay" style="color:#E05533;"></span></span>
+                            <button id="settingsBtn" class="icon-btn" style="display:none;" title="Match Settings">⋮</button>
+                        </div>
+                        
+                        <div class="online-controls">
+                            <button id="openCreateRoomBtn" class="diff-btn">1. Create Room (Host)</button>
+                            <div class="section-divider"></div>
+                            <button id="openJoinRoomBtn" class="diff-btn">2. Join Room</button>
+                            
+                            <div id="connectionStatus" class="status-box">Not connected.</div>
+                            <div id="opponentNameDisplay" class="status-box"></div>
+                        </div>
+                    </div>
+
+                    <div class="result-panel">
+                        <div class="result-label">Status</div>
+                        <div id="resultText" class="result-text">Your Turn!</div>
+                        <button id="resetButton" class="roll-button">Restart Game</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="settingsModal" class="modal-overlay">
+        <div class="modal-card">
+            <h3 style="margin-top:0; margin-bottom: 16px; color:#3a3a3a; text-align:center;">Match Settings</h3>
+            
+            <div class="setting-group">
+                <label class="input-label">Who plays as X?</label>
+                <select id="settingPlayerX" class="room-input"></select>
+            </div>
+            
+            <div class="setting-group">
+                <label class="input-label">Who goes first?</label>
+                <select id="settingFirstPlayer" class="room-input"></select>
+            </div>
+            
+            <button id="applySettingsBtn" class="roll-button" style="width:100%;">Apply & Restart</button>
+            <button id="closeSettingsBtn" class="tab-btn" style="width:100%; margin-top:8px;">Cancel</button>
+        </div>
+    </div>
+
+    <div id="createRoomModal" class="modal-overlay">
+        <div class="modal-card">
+            <h3 style="margin-top:0; margin-bottom: 16px; color:#3a3a3a; text-align:center;">Create Room</h3>
+            <div class="setting-group">
+                <label class="input-label">Custom Room Name (Optional)</label>
+                <input type="text" id="createRoomInput" class="room-input" placeholder="Leave blank for random ID">
+            </div>
+            <button id="confirmCreateRoomBtn" class="roll-button" style="width:100%;">Create Room</button>
+            <button id="closeCreateRoomBtn" class="tab-btn" style="width:100%; margin-top:8px;">Cancel</button>
+        </div>
+    </div>
+
+    <div id="joinRoomModal" class="modal-overlay">
+        <div class="modal-card">
+            <h3 style="margin-top:0; margin-bottom: 16px; color:#3a3a3a; text-align:center;">Join Room</h3>
+            <div class="setting-group">
+                <label class="input-label">Room ID / Name</label>
+                <input type="text" id="joinIdInput" class="room-input" placeholder="Paste ID here...">
+            </div>
+            <button id="confirmJoinRoomBtn" class="roll-button" style="width:100%;">Join Match</button>
+            <button id="closeJoinRoomBtn" class="tab-btn" style="width:100%; margin-top:8px;">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const boardEl = document.getElementById('board');
+        const resultText = document.getElementById('resultText');
+        const resetBtn = document.getElementById('resetButton');
+        
+        // Tab & UI Elements
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const botPanel = document.getElementById('botPanel');
+        const onlinePanel = document.getElementById('onlinePanel');
+        const diffBtns = document.querySelectorAll('.diff-btn[data-level]');
+        
+        // Online UI
+        const playerNameDisplay = document.getElementById('playerNameDisplay');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const opponentNameDisplay = document.getElementById('opponentNameDisplay');
+        const settingsBtn = document.getElementById('settingsBtn');
+        
+        // Modal UI Elements
+        const settingsModal = document.getElementById('settingsModal');
+        const settingPlayerX = document.getElementById('settingPlayerX');
+        const settingFirstPlayer = document.getElementById('settingFirstPlayer');
+        const applySettingsBtn = document.getElementById('applySettingsBtn');
+        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+
+        const createRoomModal = document.getElementById('createRoomModal');
+        const openCreateRoomBtn = document.getElementById('openCreateRoomBtn');
+        const confirmCreateRoomBtn = document.getElementById('confirmCreateRoomBtn');
+        const closeCreateRoomBtn = document.getElementById('closeCreateRoomBtn');
+        const createRoomInput = document.getElementById('createRoomInput');
+
+        const joinRoomModal = document.getElementById('joinRoomModal');
+        const openJoinRoomBtn = document.getElementById('openJoinRoomBtn');
+        const confirmJoinRoomBtn = document.getElementById('confirmJoinRoomBtn');
+        const closeJoinRoomBtn = document.getElementById('closeJoinRoomBtn');
+        const joinIdInput = document.getElementById('joinIdInput');
+
+        // Game State
+        let board = Array(9).fill(null);
+        let gameMode = 'bot'; 
+        let currentDifficulty = 'normal';
+        let gameActive = true;
+        let isBotThinking = false;
+        
+        // Online P2P State
+        let peer = null;
+        let conn = null;
+        let isHost = false;
+        let myRole = null; // 'host' or 'joiner'
+        let myMarker = 'X'; 
+        let isMyTurn = true; 
+        
+        // Settings State (roles are used to prevent identical name bugs)
+        let opponentNameStr = "Opponent";
+        let playerXRole = 'host'; 
+        let firstPlayerRole = 'host';
+
+        // Get Name from localStorage
+        const savedName = localStorage.getItem('userName') || "Anonymous";
+        playerNameDisplay.textContent = savedName;
+
+        const WIN_LINES = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]
+        ];
+
+        // --- CORE GAME LOGIC ---
+
+        function initBoard() {
+            boardEl.innerHTML = '';
+            board = Array(9).fill(null);
+            gameActive = true;
+            isBotThinking = false;
+            
+            if (gameMode === 'bot') {
+                myMarker = 'X';
+                isMyTurn = true;
+                resultText.textContent = "Your Turn!";
+            } else if (gameMode === 'online') {
+                if (conn && conn.open) {
+                    // Apply dynamic rules based on roles
+                    myMarker = (myRole === playerXRole) ? 'X' : 'O';
+                    isMyTurn = (myRole === firstPlayerRole);
+                    
+                    resultText.textContent = isMyTurn ? "Your Turn!" : "Waiting on opponent...";
+                    gameActive = true; 
+                } else {
+                    resultText.textContent = "Connect to play!";
+                    gameActive = false; 
+                }
+            }
+            
+            resultText.style.color = "#3a3a3a";
+
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.index = i;
+                cell.addEventListener('click', () => handleCellClick(i));
+                boardEl.appendChild(cell);
+            }
+        }
+
+        function updateBoardUI() {
+            boardEl.innerHTML = '';
+            gameActive = true;
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.index = i;
+                if (board[i]) {
+                    cell.textContent = board[i];
+                    cell.classList.add('taken', board[i].toLowerCase());
+                }
+                cell.addEventListener('click', () => handleCellClick(i));
+                boardEl.appendChild(cell);
+            }
+            
+            const xWin = checkWin(board, 'X');
+            const oWin = checkWin(board, 'O');
+            const empty = getEmptySpots(board).length === 0;
+            
+            if (xWin) endGame(myMarker === 'X' ? "You Win!" : "You Lose!", xWin.line);
+            else if (oWin) endGame(myMarker === 'O' ? "You Win!" : "You Lose!", oWin.line);
+            else if (empty) endGame("It's a Draw!", null);
+            else {
+                resultText.textContent = isMyTurn ? "Your Turn!" : "Waiting on opponent...";
+                resultText.style.color = "#3a3a3a";
+            }
+        }
+
+        function handleCellClick(index) {
+            if (!gameActive || isBotThinking || board[index]) return;
+            if (gameMode === 'online' && !isMyTurn) return;
+
+            makeMove(index, myMarker);
+            
+            if (gameMode === 'bot' && gameActive) {
+                isBotThinking = true;
+                resultText.textContent = "Bot is thinking...";
+                setTimeout(botMove, 400); 
+            } 
+            else if (gameMode === 'online') {
+                isMyTurn = false;
+                if(gameActive) resultText.textContent = "Waiting on opponent...";
+                if (conn && conn.open) {
+                    conn.send({ type: 'move', index: index });
+                }
+            }
+        }
+
+        function makeMove(index, marker) {
+            board[index] = marker;
+            const cell = boardEl.children[index];
+            cell.textContent = marker;
+            cell.classList.add('taken', marker.toLowerCase());
+
+            const winObj = checkWin(board, marker);
+            if (winObj) {
+                let winMsg = marker === myMarker ? "You Win!" : "You Lose!";
+                if (gameMode === 'bot') winMsg = marker === 'X' ? "You Win!" : "Bot Wins!";
+                endGame(winMsg, winObj.line);
+            } else if (getEmptySpots(board).length === 0) {
+                endGame("It's a Draw!", null);
+            }
+        }
+
+        function endGame(message, winningLine) {
+            gameActive = false;
+            resultText.textContent = message;
+            if (message === "You Win!") resultText.style.color = "#2DA87A";
+            else if (message !== "It's a Draw!") resultText.style.color = "#E05533";
+
+            if (winningLine) {
+                winningLine.forEach(idx => boardEl.children[idx].classList.add('win-highlight'));
+            }
+        }
+
+        function checkWin(currentBoard, marker) {
+            for (let line of WIN_LINES) {
+                if (currentBoard[line[0]] === marker && currentBoard[line[1]] === marker && currentBoard[line[2]] === marker) {
+                    return { line };
+                }
+            }
+            return null;
+        }
+
+        function getEmptySpots(currentBoard) {
+            return currentBoard.map((val, idx) => val === null ? idx : null).filter(val => val !== null);
+        }
+
+        // --- BOT LOGIC ---
+        function botMove() {
+            if (!gameActive) return;
+            const emptySpots = getEmptySpots(board);
+            if (emptySpots.length === 0) return;
+
+            let moveIndex;
+            let botMarker = 'O';
+
+            if (currentDifficulty === 'easy') {
+                moveIndex = emptySpots[Math.floor(Math.random() * emptySpots.length)];
+            } else if (currentDifficulty === 'normal') {
+                moveIndex = findWinningMove(board, botMarker) ?? findWinningMove(board, 'X') ?? emptySpots[Math.floor(Math.random() * emptySpots.length)];
+            } else if (currentDifficulty === 'hard') {
+                moveIndex = minimax(board, botMarker).index;
+            }
+
+            makeMove(moveIndex, botMarker);
+            if (gameActive) {
+                resultText.textContent = "Your Turn!";
+                isBotThinking = false;
+            }
+        }
+
+        function findWinningMove(currentBoard, marker) {
+            const emptySpots = getEmptySpots(currentBoard);
+            for (let i = 0; i < emptySpots.length; i++) {
+                let testBoard = [...currentBoard];
+                testBoard[emptySpots[i]] = marker;
+                if (checkWin(testBoard, marker)) return emptySpots[i];
+            }
+            return null;
+        }
+
+        function minimax(newBoard, currentPlayer) {
+            const availSpots = getEmptySpots(newBoard);
+            if (checkWin(newBoard, 'X')) return { score: -10 };
+            if (checkWin(newBoard, 'O')) return { score: 10 };
+            if (availSpots.length === 0) return { score: 0 };
+
+            const moves = [];
+            for (let i = 0; i < availSpots.length; i++) {
+                const move = {};
+                move.index = availSpots[i];
+                newBoard[availSpots[i]] = currentPlayer;
+
+                if (currentPlayer === 'O') move.score = minimax(newBoard, 'X').score;
+                else move.score = minimax(newBoard, 'O').score;
+                
+                newBoard[availSpots[i]] = null; 
+                moves.push(move);
+            }
+
+            let bestMove;
+            if (currentPlayer === 'O') {
+                let bestScore = -10000;
+                for (let i = 0; i < moves.length; i++) {
+                    if (moves[i].score > bestScore) { bestScore = moves[i].score; bestMove = i; }
+                }
+            } else {
+                let bestScore = 10000;
+                for (let i = 0; i < moves.length; i++) {
+                    if (moves[i].score < bestScore) { bestScore = moves[i].score; bestMove = i; }
+                }
+            }
+            return moves[bestMove];
+        }
+
+        // --- ONLINE P2P LOGIC ---
+
+        function setupConnectionEvents() {
+            conn.on('open', () => {
+                connectionStatus.textContent = "Connected!";
+                connectionStatus.style.color = "#2DA87A";
+                
+                myRole = isHost ? 'host' : 'joiner';
+                conn.send({ type: 'info', name: savedName });
+
+                // Boot up board immediately
+                initBoard();
+                
+                if (isHost) {
+                    // Send sync to fix states if reconnecting
+                    conn.send({ type: 'sync', board: board, isXTurn: isMyTurn });
+                }
+            });
+
+            conn.on('data', (data) => {
+                if (data.type === 'info') {
+                    opponentNameStr = data.name || "Anonymous";
+                    opponentNameDisplay.textContent = "Opponent: " + opponentNameStr;
+                    settingsBtn.style.display = 'inline-block'; // Reveal settings
+                    populateSettingsDropdowns();
+                } 
+                else if (data.type === 'settings') {
+                    playerXRole = data.playerXRole;
+                    firstPlayerRole = data.firstPlayerRole;
+                    populateSettingsDropdowns(); // Keep both sides matching
+                }
+                else if (data.type === 'sync') {
+                    board = data.board;
+                    isMyTurn = !data.isXTurn; 
+                    updateBoardUI(); 
+                }
+                else if (data.type === 'move') {
+                    let opponentMarker = myMarker === 'X' ? 'O' : 'X';
+                    makeMove(data.index, opponentMarker);
+                    if (gameActive) {
+                        isMyTurn = true;
+                        resultText.textContent = "Your Turn!";
+                    }
+                } 
+                else if (data.type === 'reset') {
+                    initBoard();
+                }
+            });
+
+            conn.on('close', () => {
+                connectionStatus.textContent = "Opponent disconnected.";
+                connectionStatus.style.color = "#E05533";
+                opponentNameDisplay.textContent = "";
+                settingsBtn.style.display = 'none';
+                gameActive = false;
+            });
+        }
+
+        // --- MODALS AND ROOM CONNECTION UI ---
+
+        // 1. Settings Modal
+        function populateSettingsDropdowns() {
+            let hostName = isHost ? savedName : opponentNameStr;
+            let joinerName = isHost ? opponentNameStr : savedName;
+            
+            const optionsHTML = `
+                <option value="host">${hostName}</option>
+                <option value="joiner">${joinerName}</option>
+            `;
+            
+            settingPlayerX.innerHTML = optionsHTML;
+            settingFirstPlayer.innerHTML = optionsHTML;
+            
+            settingPlayerX.value = playerXRole;
+            settingFirstPlayer.value = firstPlayerRole;
+        }
+
+        settingsBtn.addEventListener('click', () => {
+            populateSettingsDropdowns();
+            settingsModal.classList.add('active');
+        });
+
+        closeSettingsBtn.addEventListener('click', () => {
+            settingsModal.classList.remove('active');
+        });
+
+        applySettingsBtn.addEventListener('click', () => {
+            playerXRole = settingPlayerX.value;
+            firstPlayerRole = settingFirstPlayer.value;
+            
+            if (conn && conn.open) {
+                conn.send({ type: 'settings', playerXRole, firstPlayerRole });
+                conn.send({ type: 'reset' });
+            }
+            
+            initBoard();
+            settingsModal.classList.remove('active');
+        });
+
+        // 2. Create Room Modal
+        openCreateRoomBtn.addEventListener('click', () => {
+            createRoomModal.classList.add('active');
+            createRoomInput.focus();
+        });
+        
+        closeCreateRoomBtn.addEventListener('click', () => {
+            createRoomModal.classList.remove('active');
+        });
+
+        confirmCreateRoomBtn.addEventListener('click', () => {
+            createRoomModal.classList.remove('active'); // Hide modal
+            
+            const customId = createRoomInput.value.trim();
+            connectionStatus.textContent = "Creating room...";
+            connectionStatus.style.color = "#E05533"; 
+            opponentNameDisplay.textContent = "";
+            
+            if (peer) peer.destroy();
+
+            peer = customId ? new Peer(customId) : new Peer(); 
+            
+            peer.on('open', (id) => {
+                connectionStatus.innerHTML = `Send this ID to your friend:<br><strong style="color:#3a3a3a; user-select:all;">${id}</strong>`;
+                isHost = true;
+            });
+
+            peer.on('connection', (connection) => {
+                conn = connection;
+                setupConnectionEvents();
+            });
+
+            peer.on('error', (err) => {
+                if (err.type === 'unavailable-id') {
+                    connectionStatus.textContent = "Room name already taken! Please choose another.";
+                } else {
+                    connectionStatus.textContent = "Connection Error: " + err.message;
+                }
+            });
+        });
+
+        // 3. Join Room Modal
+        openJoinRoomBtn.addEventListener('click', () => {
+            joinRoomModal.classList.add('active');
+            joinIdInput.focus();
+        });
+        
+        closeJoinRoomBtn.addEventListener('click', () => {
+            joinRoomModal.classList.remove('active');
+        });
+
+        confirmJoinRoomBtn.addEventListener('click', () => {
+            const roomId = joinIdInput.value.trim();
+            if (!roomId) return alert("Please enter a Room ID!");
+            
+            joinRoomModal.classList.remove('active'); // Hide modal
+            
+            connectionStatus.textContent = "Joining room...";
+            connectionStatus.style.color = "#E05533";
+            opponentNameDisplay.textContent = "";
+            
+            if (!peer || peer.destroyed) peer = new Peer();
+
+            peer.on('open', () => {
+                conn = peer.connect(roomId);
+                isHost = false;
+                setupConnectionEvents();
+            });
+            
+            peer.on('error', (err) => {
+                connectionStatus.textContent = "Error: " + err.message;
+            });
+        });
+
+        // --- EVENT LISTENERS ---
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                gameMode = e.target.dataset.mode;
+                
+                if (gameMode === 'bot') {
+                    botPanel.classList.add('active');
+                    onlinePanel.classList.remove('active');
+                } else {
+                    botPanel.classList.remove('active');
+                    onlinePanel.classList.add('active');
+                }
+                initBoard();
+            });
+        });
+
+        diffBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                diffBtns.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentDifficulty = e.target.dataset.level;
+                initBoard();
+            });
+        });
+
+        resetBtn.addEventListener('click', () => {
+            if (gameMode === 'online' && conn && conn.open) {
+                conn.send({ type: 'reset' });
+            }
+            initBoard();
+        });
+
+        // Start first game
+        initBoard();
+    })();
+    </script>
+</body>
+</html>

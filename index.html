@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>.kk | Home</title>
+    <link rel="icon" href="assets/images/icon.png">
+    <link rel="stylesheet" href="styles/mainStyles.css">
+</head>
+<body>
+    <header>
+        <a href="index.html" class="logo">
+            <img src="assets/images/kk.jpg" alt=".kk logo" class="logo-mark">
+            <span>kaka's website kub</span>
+        </a>
+        <nav class="nav">
+            <a href="index.html" class="nav-link active">Home</a>
+            <a href="gamble.html" class="nav-link">Gamble</a>
+            <a href="games.html" class="nav-link">Games</a>
+            <a href="others.html" class="nav-link">Others</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="name-input-section">
+            <span class="welcome-text">Welcome</span>
+            <input 
+                type="text" 
+                id="nameInput" 
+                class="name-input" 
+                placeholder="Enter your name"
+                maxlength="50"
+            />
+            <button id="confirmButton" class="confirm-button">Confirm</button>
+        </div>
+
+        <div class="cards">
+            <a href="gamble.html" class="card">
+                <img src="assets/images/thumbnail/main/gamble.png" alt="Placeholder image 1" />
+                <h2>Gamble</h2>
+                <p>Short description for the first item. This is a clean placeholder area for your main message.</p>
+            </a>
+
+            <a href="games.html" class="card">
+                <img src="assets/images/thumbnail/main/games.png" alt="Placeholder image 2" />
+                <h2>Games</h2>
+                <p>Short description for the second item. Keep the text concise and easy to read.</p>
+            </a>
+
+            <a href="others.html" class="card">
+                <img src="assets/images/thumbnail/main/other.png" alt="Placeholder image 3" />
+                <h2>Others</h2>
+                <p>Short description for the third item. This is the final item in the horizontal group.</p>
+            </a>
+        </div>
+    </main>
+
+    <script>
+        const nameInput = document.getElementById('nameInput');
+        const confirmButton = document.getElementById('confirmButton');
+        
+        // Load saved name from localStorage on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedName = localStorage.getItem('userName');
+            if (savedName) {
+                nameInput.value = savedName;
+            }
+        });
+        
+        // Save name to localStorage on input change (optional, or move to button)
+        nameInput.addEventListener('input', (e) => {
+            localStorage.setItem('userName', e.target.value);
+        });
+        
+        // Optional: Save on confirm button click
+        confirmButton.addEventListener('click', () => {
+            localStorage.setItem('userName', nameInput.value);
+            
+            // Add click animation
+            confirmButton.classList.add('clicked');
+            
+            // Remove the animation class after it completes
+            setTimeout(() => {
+                confirmButton.classList.remove('clicked');
+            }, 600);
+        });
+    </script>
+</body>
+</html>

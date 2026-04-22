@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>.kk | Games</title>
+    <link rel="icon" href="assets/images/icon.png">
+    <link rel="stylesheet" href="styles/mainStyles.css">
+</head>
+<body>
+    <header>
+        <a href="index.html" class="logo">
+            <img src="assets/images/kk.jpg" alt=".kk logo" class="logo-mark">
+            <span>kaka's website kub</span>
+        </a>
+        <nav class="nav">
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="gamble.html" class="nav-link">Gamble</a>
+            <a href="games.html" class="nav-link active">Games</a>
+            <a href="others.html" class="nav-link">Others</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="name-input-section">
+            <span class="welcome-text">Search</span>
+            <input 
+                type="search" 
+                id="searchInput" 
+                class="name-input" 
+                placeholder="Enter keywords"
+                maxlength="50"
+            />
+        </div>
+
+        <div class="cards">
+            <a href="games/tictactoe.html" class="card">
+                <img src="assets/images/thumbnail/games/tictactoe.png" alt="Placeholder image 1" />
+                <h2>Tic Tac Toe</h2>
+                <p>A simple two-player paper-and-pencil game played on a 3x3 grid.</p>
+            </a>
+
+            <a href="games/unoClassic.html" class="card">
+                <img src="assets/images/thumbnail/games/ClassicUNO.jpg" alt="Placeholder image 2" />
+                <h2>Classic UNO</h2>
+                <p>A fast-paced "shedding-type" card game for 2 to 4 players.</p>
+            </a>
+
+            <div class="card">
+                <img src="assets/images/placeholder.png" alt="Placeholder image 3" />
+                <h2>Feature Three</h2>
+                <p>Short description for the third item. This is the final item in the horizontal group.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const cards = Array.from(document.querySelectorAll('.cards .card'));
+
+        const filterCards = () => {
+            const query = searchInput.value.trim().toLowerCase();
+            cards.forEach(card => {
+                const title = card.querySelector('h2')?.textContent.trim().toLowerCase() || '';
+                card.style.display = title.includes(query) ? '' : 'none';
+            });
+        };
+
+        searchInput.addEventListener('input', filterCards);
+    </script>
+</body>
+</html>

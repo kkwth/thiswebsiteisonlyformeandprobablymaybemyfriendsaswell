@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>.kk | Coin Flip</title>
+    <link rel="icon" href="../assets/images/icon.png">
+    <link rel="stylesheet" href="../styles/mainStyles.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+        }
+        header.page-header {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            padding: 20px 32px;
+            background: rgba(255,255,255,0.9);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .back-button {
+            padding: 10px 16px;
+            background: #ffffff;
+            border: 1px solid #e0d6c8;
+            border-radius: 12px;
+            color: #3a3a3a;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: background 0.2s ease;
+        }
+        .back-button:hover {
+            background: #f0f0f0;
+        }
+        .page-title {
+            font-size: 1.55rem;
+            font-weight: bold;
+            color: #3a3a3a;
+            justify-self: center;
+        }
+        .header-spacer {
+            width: 100px;
+        }
+        main {
+            flex: 1;
+            padding: 40px 32px;
+        }
+        .game-shell {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+        .game-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            padding: 32px;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.08);
+            display: grid;
+            gap: 28px;
+        }
+        .coin-scene {
+            display: grid;
+            place-items: center;
+            padding: 24px 0 12px;
+            perspective: 1200px;
+        }
+        .coin {
+            width: 240px;
+            height: 240px;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateY(0deg);
+            transition: transform 1s ease;
+        }
+        .coin::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle at top left, rgba(255,255,255,0.92), transparent 28%),
+                        radial-gradient(circle at bottom right, rgba(255,255,255,0.18), transparent 28%);
+            pointer-events: none;
+            z-index: 2;
+        }
+        .coin-face {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            box-shadow: inset 0 10px 30px rgba(0, 0, 0, 0.12), 0 15px 45px rgba(0, 0, 0, 0.18);
+            backface-visibility: hidden;
+            overflow: hidden;
+            color: #fff;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.18);
+        }
+        .coin-front,
+        .coin-back {
+            display: grid;
+            gap: 8px;
+            text-align: center;
+            padding: 24px;
+        }
+        .coin-front {
+            background: radial-gradient(circle at top left, #f9e5b0 12%, #d8b96a 45%, #b07f3f 100%);
+        }
+        .coin-back {
+            background: radial-gradient(circle at top left, #d6e6ff 12%, #94b4e2 45%, #5f7db6 100%);
+            transform: rotateY(180deg);
+        }
+        .coin-face::after {
+            content: '';
+            position: absolute;
+            inset: 18px;
+            border-radius: 50%;
+            border: 6px solid rgba(255,255,255,0.32);
+            pointer-events: none;
+        }
+        .coin .face-icon {
+            font-size: 4rem;
+        }
+        .coin .face-label {
+            font-size: 1rem;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+        .details {
+            display: grid;
+            gap: 16px;
+        }
+        .result-panel {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 22px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: rgba(255,255,255,0.9);
+        }
+        .result-label {
+            font-size: 0.95rem;
+            color: var(--muted);
+        }
+        .result-text {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #3a3a3a;
+        }
+        .flip-button {
+            width: 100%;
+            max-width: 260px;
+            justify-self: center;
+            padding: 16px 22px;
+            font-size: 1rem;
+            border-radius: 16px;
+            border: 1px solid #e0d6c8;
+            background: #ffffff;
+            color: #3a3a3a;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .flip-button:hover {
+            background: #f5f0e8;
+            transform: translateY(-1px);
+        }
+        .flip-button:active {
+            transform: translateY(1px);
+        }
+        .hint {
+            color: var(--muted);
+            line-height: 1.7;
+        }
+        @media (max-width: 700px) {
+            .coin { width: 200px; height: 200px; font-size: 3.5rem; }
+            .game-card { padding: 24px; }
+            .page-title { font-size: 1.35rem; }
+        }
+    </style>
+</head>
+<body>
+    <header class="page-header">
+        <a href="../gamble.html" class="back-button">< Back</a>
+        <span class="page-title">Coin Flip</span>
+        <span class="header-spacer"></span>
+    </header>
+
+    <main>
+        <section class="game-shell">
+            <div class="game-card">
+                <div class="coin-scene">
+                    <div class="coin" id="coin" aria-live="polite" aria-label="Coin flip">
+                        <div class="coin-face coin-front">
+                            <span class="face-icon">👤</span>
+                            <span class="face-label">Heads</span>
+                        </div>
+                        <div class="coin-face coin-back">
+                            <span class="face-icon">⚖️</span>
+                            <span class="face-label">Tails</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="details">
+                    <div class="result-panel">
+                        <div>
+                            <div class="result-label">Last result</div>
+                            <div id="resultText" class="result-text">Waiting...</div>
+                        </div>
+                        <button id="flipButton" class="flip-button">Flip Coin</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const coin = document.getElementById('coin');
+        const flipButton = document.getElementById('flipButton');
+        const resultText = document.getElementById('resultText');
+
+        const outcomes = ['Heads', 'Tails'];
+        let rotation = 0;
+
+        const updateCoin = (result) => {
+            const desiredAngle = result === 'Heads' ? 0 : 180;
+            const currentAngle = rotation % 360;
+            const sameFace = currentAngle === desiredAngle;
+            const spinAmount = sameFace ? 720 : 900;
+
+            rotation += spinAmount;
+            coin.style.transform = `rotateY(${rotation}deg)`;
+            resultText.textContent = result;
+        };
+
+        flipButton.addEventListener('click', () => {
+            const result = outcomes[Math.floor(Math.random() * outcomes.length)];
+            updateCoin(result);
+        });
+
+        coin.addEventListener('click', () => {
+            flipButton.click();
+        });
+    </script>
+</body>
+</html>
