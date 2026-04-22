@@ -4582,8 +4582,35 @@
 
             tabBtns.forEach(btn => {
                 btn.addEventListener('click', (e) => {
+                    const targetMode = e.target.dataset.mode;
+
+                    // Warn if leaving an active online room
+                    const inRoom = gameMode === 'online' && (isHost || connections.length > 0);
+                    if (targetMode === 'bot' && inRoom) {
+                        const confirmed = confirm(
+                            isHost
+                                ? 'You are the host — leaving will close the room for all players. Leave anyway?'
+                                : 'You are currently in a room. Leaving will disconnect you. Leave anyway?'
+                        );
+                        if (!confirmed) return; // keep current tab, do nothing
+
+                        // Disconnect cleanly
+                        if (isHost) {
+                            connections.forEach(c => { try { c.send({ type: 'host_closed' }); c.close(); } catch(_){} });
+                        } else {
+                            connections.forEach(c => { try { c.close(); } catch(_){} });
+                        }
+                        if (peer) { peer.destroy(); peer = null; }
+                        connections = [];
+                        isHost = false;
+                        onlineBotSlots = new Set();
+                        connectionStatus.textContent = 'Not connected.';
+                        connectionStatus.style.color = '#E05533';
+                        opponentNameDisplay.textContent = '';
+                    }
+
                     tabBtns.forEach(b => b.classList.remove('active')); e.target.classList.add('active');
-                    gameMode = e.target.dataset.mode;
+                    gameMode = targetMode;
                     botPanel.classList.toggle('active', gameMode === 'bot'); onlinePanel.classList.toggle('active', gameMode === 'online');
                     initGame();
                 });
@@ -4813,6 +4840,12 @@
             }
 
             function openPlayerOrderModal() {
+                // If in online mode but no room has been created/joined yet, reset to just the local player
+                if (gameMode === 'online' && !isHost && connections.length === 0) {
+                    numPlayers = 1;
+                    onlineBotSlots = new Set();
+                    playerNames[0] = savedName;
+                }
                 const readOnly = (gameMode === 'online' && !isHost);
                 refreshPlayerOrderList(readOnly);
                 const totalCount = connections.length + 1 + onlineBotSlots.size;
